@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import org.webrtc.VideoFrame;
 
@@ -28,14 +29,14 @@ public class VideoRenderer {
   public static class I420Frame {
     public final int width;
     public final int height;
-    public final int[] yuvStrides;
-    public ByteBuffer[] yuvPlanes;
+    @Nullable public final int[] yuvStrides;
+    @Nullable public ByteBuffer[] yuvPlanes;
     public final boolean yuvFrame;
     // Matrix that transforms standard coordinates to their proper sampling locations in
     // the texture. This transform compensates for any properties of the video source that
     // cause it to appear different from a normalized texture. This matrix does not take
     // |rotationDegree| into account.
-    public final float[] samplingMatrix;
+    @Nullable public final float[] samplingMatrix;
     public int textureId;
     // Frame pointer in C++.
     private long nativeFramePointer;
@@ -46,7 +47,7 @@ public class VideoRenderer {
 
     // If this I420Frame was constructed from VideoFrame.Buffer, this points to
     // the backing buffer.
-    private final VideoFrame.Buffer backingBuffer;
+    @Nullable private final VideoFrame.Buffer backingBuffer;
 
     /**
      * Construct a frame of the given dimensions with the specified planar data.
@@ -170,10 +171,10 @@ public class VideoRenderer {
             yuvStrides[1], yuvPlanes[2], yuvStrides[2],
             () -> { VideoRenderer.renderFrameDone(this); });
       } else {
-        // Note: surfaceTextureHelper being null means calling toI420 will crash.
+        // Note: No Handler or YuvConverter means calling toI420 will crash.
         buffer = new TextureBufferImpl(width, height, VideoFrame.TextureBuffer.Type.OES, textureId,
-            RendererCommon.convertMatrixToAndroidGraphicsMatrix(samplingMatrix),
-            null /* surfaceTextureHelper */, () -> { VideoRenderer.renderFrameDone(this); });
+            RendererCommon.convertMatrixToAndroidGraphicsMatrix(samplingMatrix), null /* handler */,
+            null /* yuvConverter */, () -> VideoRenderer.renderFrameDone(this));
       }
       return new VideoFrame(buffer, rotationDegree, 0 /* timestampNs */);
     }
@@ -185,18 +186,7 @@ public class VideoRenderer {
       return new I420Frame(width, height, rotationDegree, new int[] {y_stride, u_stride, v_stride},
           new ByteBuffer[] {y_buffer, u_buffer, v_buffer}, nativeFramePointer);
     }
-
-    @CalledByNative("I420Frame")
-    static I420Frame createTextureFrame(int width, int height, int rotationDegree, int textureId,
-        float[] samplingMatrix, long nativeFramePointer) {
-      return new I420Frame(
-          width, height, rotationDegree, textureId, samplingMatrix, nativeFramePointer);
-    }
   }
-
-  // Helper native function to do a video frame plane copying.
-  static native void nativeCopyPlane(
-      ByteBuffer src, int width, int height, int srcStride, ByteBuffer dst, int dstStride);
 
   /** The real meat of VideoSinkInterface. */
   public static interface Callbacks {

@@ -14,6 +14,7 @@ import android.graphics.Matrix;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import java.nio.ByteBuffer;
+import javax.annotation.Nullable;
 
 /**
  * Java version of webrtc::VideoFrame and webrtc::VideoFrameBuffer. A difference from the C++
@@ -26,8 +27,15 @@ import java.nio.ByteBuffer;
  * WebRTC software encoders.
  */
 @JNINamespace("webrtc::jni")
-public class VideoFrame {
-  public interface Buffer {
+public class VideoFrame implements RefCounted {
+  /**
+   * Implements image storage medium. Might be for example an OpenGL texture or a memory region
+   * containing I420-data.
+   *
+   * <p>Reference counting is needed since a video buffer can be shared between multiple VideoSinks,
+   * and the buffer needs to be returned to the VideoSource as soon as all references are gone.
+   */
+  public interface Buffer extends RefCounted {
     /**
      * Resolution of the buffer in pixels.
      */
@@ -41,12 +49,8 @@ public class VideoFrame {
      */
     @CalledByNative("Buffer") I420Buffer toI420();
 
-    /**
-     * Reference counting is needed since a video buffer can be shared between multiple VideoSinks,
-     * and the buffer needs to be returned to the VideoSource as soon as all references are gone.
-     */
-    @CalledByNative("Buffer") void retain();
-    @CalledByNative("Buffer") void release();
+    @Override @CalledByNative("Buffer") void retain();
+    @Override @CalledByNative("Buffer") void release();
 
     /**
      * Crops a region defined by |cropx|, |cropY|, |cropWidth| and |cropHeight|. Scales it to size
@@ -122,6 +126,11 @@ public class VideoFrame {
   private final int rotation;
   private final long timestampNs;
 
+  /**
+   * Constructs a new VideoFrame backed by the given {@code buffer}.
+   *
+   * @note Ownership of the buffer object is tranferred to the new VideoFrame.
+   */
   @CalledByNative
   public VideoFrame(Buffer buffer, int rotation, long timestampNs) {
     if (buffer == null) {
@@ -170,18 +179,19 @@ public class VideoFrame {
     return buffer.getWidth();
   }
 
-  /**
-   * Reference counting of the underlying buffer.
-   */
+  @Override
   public void retain() {
     buffer.retain();
   }
 
+  @Override
   @CalledByNative
   public void release() {
     buffer.release();
   }
 
+  // TODO(sakal): This file should be strictly an interface. This method should be moved somewhere
+  // else.
   public static VideoFrame.Buffer cropAndScaleI420(final I420Buffer buffer, int cropX, int cropY,
       int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
     if (cropWidth == scaleWidth && cropHeight == scaleHeight) {

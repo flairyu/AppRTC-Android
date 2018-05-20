@@ -25,7 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Can be used to save the video frames to file.
  */
 @JNINamespace("webrtc::jni")
-public class VideoFileRenderer implements VideoRenderer.Callbacks, VideoSink {
+public class VideoFileRenderer implements VideoSink {
   private static final String TAG = "VideoFileRenderer";
 
   private final HandlerThread renderThread;
@@ -74,13 +74,6 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks, VideoSink {
   }
 
   @Override
-  public void renderFrame(final VideoRenderer.I420Frame i420Frame) {
-    final VideoFrame frame = i420Frame.toVideoFrame();
-    onFrame(frame);
-    frame.release();
-  }
-
-  @Override
   public void onFrame(VideoFrame frame) {
     frame.retain();
     renderThreadHandler.post(() -> renderFrameOnRenderThread(frame));
@@ -101,9 +94,9 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks, VideoSink {
     int cropWidth = buffer.getWidth();
     int cropHeight = buffer.getHeight();
     if (fileAspectRatio > frameAspectRatio) {
-      cropHeight *= frameAspectRatio / fileAspectRatio;
+      cropHeight = (int) (cropHeight * (frameAspectRatio / fileAspectRatio));
     } else {
-      cropWidth *= fileAspectRatio / frameAspectRatio;
+      cropWidth = (int) (cropWidth * (fileAspectRatio / frameAspectRatio));
     }
 
     final int cropX = (buffer.getWidth() - cropWidth) / 2;

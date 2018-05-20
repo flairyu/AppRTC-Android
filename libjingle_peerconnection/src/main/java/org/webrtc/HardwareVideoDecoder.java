@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.webrtc.ThreadUtils.ThreadChecker;
 
 /** Android hardware video decoder. */
@@ -71,7 +72,7 @@ class HardwareVideoDecoder
   // Output thread runs a loop which polls MediaCodec for decoded output buffers.  It reformats
   // those buffers into VideoFrames and delivers them to the callback.  Variable is set on decoder
   // thread and is immutable while the codec is running.
-  private Thread outputThread;
+  @Nullable private Thread outputThread;
 
   // Checker that ensures work is run on the output thread.
   private ThreadChecker outputThreadChecker;
@@ -81,7 +82,7 @@ class HardwareVideoDecoder
   private ThreadChecker decoderThreadChecker;
 
   private volatile boolean running = false;
-  private volatile Exception shutdownException = null;
+  @Nullable private volatile Exception shutdownException = null;
 
   // Dimensions (width, height, stride, and sliceHeight) may be accessed by either the decode thread
   // or the output thread.  Accesses should be protected with this lock.
@@ -101,8 +102,8 @@ class HardwareVideoDecoder
 
   private final EglBase.Context sharedContext;
   // Valid and immutable while the decoder is running.
-  private SurfaceTextureHelper surfaceTextureHelper;
-  private Surface surface = null;
+  @Nullable private SurfaceTextureHelper surfaceTextureHelper;
+  @Nullable private Surface surface = null;
 
   private static class DecodedTextureMetadata {
     final int width;
@@ -123,14 +124,14 @@ class HardwareVideoDecoder
 
   // Metadata for the last frame rendered to the texture.
   private final Object renderedTextureMetadataLock = new Object();
-  private DecodedTextureMetadata renderedTextureMetadata;
+  @Nullable private DecodedTextureMetadata renderedTextureMetadata;
 
   // Decoding proceeds asynchronously.  This callback returns decoded frames to the caller.  Valid
   // and immutable while the decoder is running.
-  private Callback callback;
+  @Nullable private Callback callback;
 
   // Valid and immutable while the decoder is running.
-  private MediaCodec codec = null;
+  @Nullable private MediaCodec codec = null;
 
   HardwareVideoDecoder(
       String codecName, VideoCodecType codecType, int colorFormat, EglBase.Context sharedContext) {
@@ -206,7 +207,7 @@ class HardwareVideoDecoder
   public VideoCodecStatus decode(EncodedImage frame, DecodeInfo info) {
     decoderThreadChecker.checkIsOnValidThread();
     if (codec == null || callback == null) {
-      Logging.d(TAG, "decode uninitalized, codec: " + codec + ", callback: " + callback);
+      Logging.d(TAG, "decode uninitalized, codec: " + (codec != null) + ", callback: " + callback);
       return VideoCodecStatus.UNINITIALIZED;
     }
 
@@ -511,37 +512,57 @@ class HardwareVideoDecoder
 
   private VideoFrame.Buffer copyI420Buffer(
       ByteBuffer buffer, int stride, int sliceHeight, int width, int height) {
+    if (stride % 2 != 0) {
+      throw new AssertionError("Stride is not divisible by two: " + stride);
+    }
+
+    // Note that the case with odd |sliceHeight| is handled in a special way.
+    // The chroma height contained in the payload is rounded down instead of
+    // up, making it one row less than what we expect in WebRTC. Therefore, we
+    // have to duplicate the last chroma rows for this case. Also, the offset
+    // between the Y plane and the U plane is unintuitive for this case. See
+    // http://bugs.webrtc.org/6651 for more info.
+    final int chromaWidth = (width + 1) / 2;
+    final int chromaHeight = (sliceHeight % 2 == 0) ? (height + 1) / 2 : height / 2;
+
     final int uvStride = stride / 2;
 
     final int yPos = 0;
+    final int yEnd = yPos + stride * height;
     final int uPos = yPos + stride * sliceHeight;
-    final int uEnd = uPos + uvStride * (sliceHeight / 2);
+    final int uEnd = uPos + uvStride * chromaHeight;
     final int vPos = uPos + uvStride * sliceHeight / 2;
-    final int vEnd = vPos + uvStride * (sliceHeight / 2);
+    final int vEnd = vPos + uvStride * chromaHeight;
 
     VideoFrame.I420Buffer frameBuffer = JavaI420Buffer.allocate(width, height);
 
-    ByteBuffer dataY = frameBuffer.getDataY();
+    buffer.limit(yEnd);
     buffer.position(yPos);
-    buffer.limit(uPos);
-    dataY.put(buffer);
+    YuvHelper.copyPlane(
+        buffer.slice(), stride, frameBuffer.getDataY(), frameBuffer.getStrideY(), width, height);
 
-    ByteBuffer dataU = frameBuffer.getDataU();
-    buffer.position(uPos);
     buffer.limit(uEnd);
-    dataU.put(buffer);
-    if (sliceHeight % 2 != 0) {
-      buffer.position(uEnd - uvStride); // Repeat the last row.
-      dataU.put(buffer);
+    buffer.position(uPos);
+    YuvHelper.copyPlane(buffer.slice(), uvStride, frameBuffer.getDataU(), frameBuffer.getStrideU(),
+        chromaWidth, chromaHeight);
+    if (sliceHeight % 2 == 1) {
+      buffer.position(uPos + uvStride * (chromaHeight - 1)); // Seek to beginning of last full row.
+
+      ByteBuffer dataU = frameBuffer.getDataU();
+      dataU.position(frameBuffer.getStrideU() * chromaHeight); // Seek to beginning of last row.
+      dataU.put(buffer); // Copy the last row.
     }
 
-    ByteBuffer dataV = frameBuffer.getDataV();
-    buffer.position(vPos);
     buffer.limit(vEnd);
-    dataV.put(buffer);
-    if (sliceHeight % 2 != 0) {
-      buffer.position(vEnd - uvStride); // Repeat the last row.
-      dataV.put(buffer);
+    buffer.position(vPos);
+    YuvHelper.copyPlane(buffer.slice(), uvStride, frameBuffer.getDataV(), frameBuffer.getStrideV(),
+        chromaWidth, chromaHeight);
+    if (sliceHeight % 2 == 1) {
+      buffer.position(vPos + uvStride * (chromaHeight - 1)); // Seek to beginning of last full row.
+
+      ByteBuffer dataV = frameBuffer.getDataV();
+      dataV.position(frameBuffer.getStrideV() * chromaHeight); // Seek to beginning of last row.
+      dataV.put(buffer); // Copy the last row.
     }
 
     return frameBuffer;

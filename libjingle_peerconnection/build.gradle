@@ -24,4 +24,5 @@ android {
 
 dependencies {
     api project(':base_java')
+    api project(':audio_device_java')
 }

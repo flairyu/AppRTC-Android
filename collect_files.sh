@@ -25,4 +25,4 @@ cp -rf ${WEBRTC_ROOT}/src/modules/audio_device/android/java/src/ ./audio_device_
 # libjingle_peerconnection
 rm -rf ./libjingle_peerconnection/src/main/java/
 cp -rf ${WEBRTC_ROOT}/src/sdk/android/api/ ./libjingle_peerconnection/src/main/java/
-cp ${WEBRTC_ROOT}/src/sdk/android/src/java/org/webrtc/* ./libjingle_peerconnection/src/main/java/org/webrtc/
+cp -rf ${WEBRTC_ROOT}/src/sdk/android/src/java/org/webrtc/* ./libjingle_peerconnection/src/main/java/org/webrtc/
