@@ -14,6 +14,8 @@ import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
+import java.util.HashMap;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /** Container class for static constants and helpers used with MediaCodec. */
@@ -74,6 +76,18 @@ class MediaCodecUtils {
       }
     }
     return false;
+  }
+
+  static Map<String, String> getCodecProperties(VideoCodecType type, boolean highProfile) {
+    switch (type) {
+      case VP8:
+      case VP9:
+        return new HashMap<String, String>();
+      case H264:
+        return H264Utils.getDefaultH264Params(highProfile);
+      default:
+        throw new IllegalArgumentException("Unsupported codec: " + type);
+    }
   }
 
   private MediaCodecUtils() {

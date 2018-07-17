@@ -26,7 +26,6 @@ import javax.annotation.Nullable;
  * format and serves as a fallback for video sinks that can only handle I420, e.g. the internal
  * WebRTC software encoders.
  */
-@JNINamespace("webrtc::jni")
 public class VideoFrame implements RefCounted {
   /**
    * Implements image storage medium. Might be for example an OpenGL texture or a memory region
@@ -119,7 +118,7 @@ public class VideoFrame implements RefCounted {
      * homogeneous coordinates of the form (s, t, 1) with s and t in the inclusive range [0, 1] to
      * the coordinate that should be used to sample that location from the buffer.
      */
-    public Matrix getTransformMatrix();
+    Matrix getTransformMatrix();
   }
 
   private final Buffer buffer;
@@ -205,9 +204,8 @@ public class VideoFrame implements RefCounted {
       dataV.position(cropX / 2 + cropY / 2 * buffer.getStrideV());
 
       buffer.retain();
-      return JavaI420Buffer.wrap(buffer.getWidth(), buffer.getHeight(), dataY.slice(),
-          buffer.getStrideY(), dataU.slice(), buffer.getStrideU(), dataV.slice(),
-          buffer.getStrideV(), buffer::release);
+      return JavaI420Buffer.wrap(scaleWidth, scaleHeight, dataY.slice(), buffer.getStrideY(),
+          dataU.slice(), buffer.getStrideU(), dataV.slice(), buffer.getStrideV(), buffer::release);
     }
 
     JavaI420Buffer newBuffer = JavaI420Buffer.allocate(scaleWidth, scaleHeight);

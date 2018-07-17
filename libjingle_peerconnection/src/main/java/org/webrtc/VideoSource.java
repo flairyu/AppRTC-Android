@@ -15,7 +15,6 @@ import javax.annotation.Nullable;
 /**
  * Java wrapper of native AndroidVideoTrackSource.
  */
-@JNINamespace("webrtc::jni")
 public class VideoSource extends MediaSource {
   private final NativeCapturerObserver capturerObserver;
 
@@ -41,7 +40,7 @@ public class VideoSource extends MediaSource {
     nativeAdaptOutputFormat(nativeSource, width, height, fps);
   }
 
-  public VideoCapturer.CapturerObserver getCapturerObserver() {
+  public CapturerObserver getCapturerObserver() {
     return capturerObserver;
   }
 
