@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
+add_definitions(-DHAVE_PTHREAD)
+
 include_directories(
     ${WEBRTC_REPO}/third_party/protobuf/src
 )

@@ -7,6 +7,9 @@ set(WEBRTC_BUILT_OUTPUT out/android_release_arm64)
 set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test/.*|.*/tests/.*|.*_test_.*|.*unittest.*|.*/end_to_end_tests/.*|.*_test.cc|.*_tests.cc|.*_integrationtest.cc|.*_perftest.cc|.*test_utils.cc|.*testutils.cc|.*testclient.cc|.*test.c")
 set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuchsia/.*|.*_ios.cc|.*_ios.mm|.*/ios/.*|.*_mac.cc|.*_mac.mm|.*/mac/.*|.*_openbsd.cc|.*_win.cc|.*/win/.*|.*win32.*|.*/windows/.*|.*sse.cc|.*sse2.cc|.*_mips.cc|.*_mips.c")
 
+# add at first, avoid header search path, definition chaos
+add_subdirectory(third_party)
+
 add_definitions(-DWEBRTC_POSIX, -DWEBRTC_LINUX, -DWEBRTC_ANDROID)
 add_definitions(-DWEBRTC_ENABLE_PROTOBUF=1)
 add_definitions(-DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
@@ -37,9 +40,6 @@ add_definitions(-DWEBRTC_INTELLIGIBILITY_ENHANCER=0 -DWEBRTC_NS_FIXED)
 
 add_definitions(-DWEBRTC_APM_DEBUG_DUMP=0)
 
-# add at first, avoid header search path chaos
-add_subdirectory(third_party)
-
 include_directories(
     ${WEBRTC_REPO}
 
@@ -63,38 +63,30 @@ include_directories(
 
 file(GLOB_RECURSE src_api
     ${WEBRTC_REPO}/api/*.cc
-    )
+)
 list(FILTER src_api EXCLUDE REGEX ${TEST_CC_FILTER})
 
 file(GLOB_RECURSE src_audio
     ${WEBRTC_REPO}/audio/*.cc
-    )
+)
 list(FILTER src_audio EXCLUDE REGEX ${TEST_CC_FILTER})
-
-file(GLOB_RECURSE src_base
-    ${WEBRTC_REPO}/base/*.cc
-    )
-list(FILTER src_base EXCLUDE REGEX ${TEST_CC_FILTER})
-list(FILTER src_base EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
-list(FILTER src_base EXCLUDE REGEX 
-    ".*_to_mac_zoned_malloc.cc|.*_to_tcmalloc.cc|.*_to_winheap.cc|.*debugallocation_shim.cc|.*file_path_watcher_fsevents.cc")
 
 file(GLOB_RECURSE src_call
     ${WEBRTC_REPO}/call/*.cc
-    )
+)
 list(FILTER src_call EXCLUDE REGEX ${TEST_CC_FILTER})
 list(APPEND src_call ${WEBRTC_REPO}/call/fake_network_pipe.cc)
 
 file(GLOB_RECURSE src_common_audio
     ${WEBRTC_REPO}/common_audio/*.c
     ${WEBRTC_REPO}/common_audio/*.cc
-    )
+)
 list(FILTER src_common_audio EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_common_audio EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
 
 file(GLOB_RECURSE src_common_video
     ${WEBRTC_REPO}/common_video/*.cc
-    )
+)
 list(FILTER src_common_video EXCLUDE REGEX ${TEST_CC_FILTER})
 
 file(GLOB_RECURSE src_logging
@@ -107,25 +99,25 @@ file(GLOB_RECURSE src_logging
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_impl.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_stream_config.cc
     ${WEBRTC_REPO}/${WEBRTC_BUILT_OUTPUT}/gen/logging/rtc_event_log/rtc_event_log.pb.cc
-    )
+)
 list(FILTER src_logging EXCLUDE REGEX ${TEST_CC_FILTER})
 
 file(GLOB_RECURSE src_media
     ${WEBRTC_REPO}/media/*.cc
-    )
+)
 list(FILTER src_media EXCLUDE REGEX ${TEST_CC_FILTER})
-list(FILTER src_media EXCLUDE REGEX 
-    ".*fakertp.cc")
+list(FILTER src_media EXCLUDE REGEX ".*fakertp.cc")
 
 file(GLOB_RECURSE src_modules
     ${WEBRTC_REPO}/modules/*.c
     ${WEBRTC_REPO}/modules/*.cc
     ${WEBRTC_REPO}/${WEBRTC_BUILT_OUTPUT}/gen/modules/*.cc
-    )
+)
 list(FILTER src_modules EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX 
-    ".*/desktop_capture/.|.*/linux/.*|.*include/audio_device_factory.cc|.*bwe_simulations.cc|.*/audio_coding/neteq/tools/.*|.*/remote_bitrate_estimator/tools/.*|.*rnn_vad_tool.cc|.*null_aec_dump_factory.cc|.*h264_color_space.cc|.*vp9_noop.cc|.*h264_decoder_impl.cc|.*h264_encoder_impl.cc|.*/android/aaudio_.*|.*ensure_initialized.cc")
+    ".*/desktop_capture/.|.*/linux/.*|.*include/audio_device_factory.cc|.*bwe_simulations.cc|.*/audio_coding/neteq/tools/.*|.*/remote_bitrate_estimator/tools/.*|.*rnn_vad_tool.cc|.*null_aec_dump_factory.cc|.*h264_color_space.cc|.*vp9_noop.cc|.*h264_decoder_impl.cc|.*h264_encoder_impl.cc|.*/android/aaudio_.*|.*ensure_initialized.cc"
+)
 
 file(GLOB_RECURSE src_ortc
     ${WEBRTC_REPO}/ortc/*.cc
@@ -134,7 +126,7 @@ list(FILTER src_ortc EXCLUDE REGEX ${TEST_CC_FILTER})
 
 file(GLOB_RECURSE src_p2p
     ${WEBRTC_REPO}/p2p/*.cc
-    )
+)
 list(FILTER src_p2p EXCLUDE REGEX ${TEST_CC_FILTER})
 
 file(GLOB_RECURSE src_pc
@@ -142,26 +134,29 @@ file(GLOB_RECURSE src_pc
 )
 list(FILTER src_pc EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_pc EXCLUDE REGEX 
-    ".*bundlefilter.cc|.*peerconnectionwrapper.cc")
+    ".*bundlefilter.cc|.*peerconnectionwrapper.cc"
+)
 
 file(GLOB_RECURSE src_rtc_base
     ${WEBRTC_REPO}/rtc_base/*.cc
-    )
+)
 list(FILTER src_rtc_base EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_rtc_base EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
 list(FILTER src_rtc_base EXCLUDE REGEX 
-    ".*macutils.cc|.*macifaddrs_converter.cc|.*testechoserver.cc|.*task_queue_gcd.cc|.*task_queue_for_test.cc|.*virtualsocketserver.cc|.*natsocketfactory.cc|.*natserver.cc")
+    ".*macutils.cc|.*macifaddrs_converter.cc|.*testechoserver.cc|.*task_queue_gcd.cc|.*task_queue_for_test.cc|.*virtualsocketserver.cc|.*natsocketfactory.cc|.*natserver.cc"
+)
 
 file(GLOB_RECURSE src_sdk
     ${WEBRTC_REPO}/sdk/android/*.cc
 )
 list(FILTER src_sdk EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_sdk EXCLUDE REGEX 
-    ".*null_audio.cc|.*null_media.cc|.*null_video.cc|.*/audio_device/aaudio_.*")
+    ".*null_audio.cc|.*null_media.cc|.*null_video.cc|.*/audio_device/aaudio_.*"
+)
 
 file(GLOB_RECURSE src_stats
     ${WEBRTC_REPO}/stats/*.cc
-    )
+)
 list(FILTER src_stats EXCLUDE REGEX ${TEST_CC_FILTER})
 
 file(GLOB_RECURSE src_system_wrappers
@@ -175,12 +170,12 @@ file(GLOB_RECURSE src_video
 )
 list(FILTER src_video EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_video EXCLUDE REGEX 
-    ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc")
+    ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc"
+)
 
 add_library(jingle_peerconnection SHARED
     ${src_api}
     ${src_audio}
-    #${src_base}
     ${src_call}
     ${src_common_audio}
     ${src_common_video}
@@ -198,18 +193,19 @@ add_library(jingle_peerconnection SHARED
 )
 
 target_link_libraries(jingle_peerconnection
-    absl
-    ${CWD}/third_party/boringssl/libs/${ANDROID_ABI}/libssl.a
-    ${CWD}/third_party/boringssl/libs/${ANDROID_ABI}/libcrypto.a
+    absl_optional
+    absl_variant
+    crypto
     event
     json
-    srtp
-    vpx
-    yuv
     opus
     protobuf_lite
     rnnoise
+    srtp
+    ssl
     usrsctp
+    vpx
+    yuv
 
     android
     log
