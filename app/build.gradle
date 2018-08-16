@@ -12,6 +12,8 @@ android {
         applicationId "org.appspot.apprtc"
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        ndk.abiFilters = ['arm64-v8a']
     }
     buildTypes {
         release {

@@ -9,6 +9,15 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode rootProject.ext.releaseVersionCode
         versionName rootProject.ext.releaseVersionName
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_shared'
+                cppFlags '-std=c++14'
+                abiFilters 'arm64-v8a'//'armeabi', 'armeabi-v7a', 'arm64-v8a', 'x86'
+                // targets "event", "json", "srtp", "vpx", "yuv", "opus", "protobuf_lite", "rnnoise", "usrsctp"
+            }
+        }
     }
     buildTypes {
         release {
@@ -19,6 +28,11 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    externalNativeBuild {
+        cmake {
+            path 'CMakeLists.txt'
+        }
     }
 }
 
