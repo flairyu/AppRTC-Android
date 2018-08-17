@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(CWD ${CMAKE_CURRENT_LIST_DIR})
 
-set(WEBRTC_REPO /Volumes/NEVERSTOP-U/webrtc/webrtc_repo/webrtc_android/src)
-set(WEBRTC_BUILT_OUTPUT out/android_release_arm64)
 set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test/.*|.*/tests/.*|.*_test_.*|.*unittest.*|.*/end_to_end_tests/.*|.*_test.cc|.*_tests.cc|.*_integrationtest.cc|.*_perftest.cc|.*test_utils.cc|.*testutils.cc|.*testclient.cc|.*test.c")
 set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuchsia/.*|.*_ios.cc|.*_ios.mm|.*/ios/.*|.*_mac.cc|.*_mac.mm|.*/mac/.*|.*_openbsd.cc|.*_win.cc|.*/win/.*|.*win32.*|.*/windows/.*|.*sse.cc|.*sse2.cc|.*_mips.cc|.*_mips.c")
 
@@ -43,8 +41,7 @@ add_definitions(-DWEBRTC_APM_DEBUG_DUMP=0)
 include_directories(
     ${WEBRTC_REPO}
 
-    ${WEBRTC_REPO}/${WEBRTC_BUILT_OUTPUT}/clang_x64/gen
-    ${WEBRTC_REPO}/${WEBRTC_BUILT_OUTPUT}/gen
+    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
 
     ${WEBRTC_REPO}/third_party/abseil-cpp
     ${WEBRTC_REPO}/third_party/boringssl/src/include
@@ -98,7 +95,7 @@ file(GLOB_RECURSE src_logging
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_factory.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_impl.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_stream_config.cc
-    ${WEBRTC_REPO}/${WEBRTC_BUILT_OUTPUT}/gen/logging/rtc_event_log/rtc_event_log.pb.cc
+    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/rtc_event_log.pb.cc
 )
 list(FILTER src_logging EXCLUDE REGEX ${TEST_CC_FILTER})
 
@@ -111,7 +108,7 @@ list(FILTER src_media EXCLUDE REGEX ".*fakertp.cc")
 file(GLOB_RECURSE src_modules
     ${WEBRTC_REPO}/modules/*.c
     ${WEBRTC_REPO}/modules/*.cc
-    ${WEBRTC_REPO}/${WEBRTC_BUILT_OUTPUT}/gen/modules/*.cc
+    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/modules/*.cc
 )
 list(FILTER src_modules EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
@@ -173,7 +170,7 @@ list(FILTER src_video EXCLUDE REGEX
     ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc"
 )
 
-add_library(jingle_peerconnection SHARED
+add_library(jingle_peerconnection_so SHARED
     ${src_api}
     ${src_audio}
     ${src_call}
@@ -192,7 +189,7 @@ add_library(jingle_peerconnection SHARED
     ${src_video}
 )
 
-target_link_libraries(jingle_peerconnection
+target_link_libraries(jingle_peerconnection_so
     absl_optional
     absl_variant
     crypto
