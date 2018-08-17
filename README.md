@@ -6,3 +6,7 @@
 + https://webrtc.googlesource.com/src/+/master/webrtc/rtc_base/java/src/org/webrtc
 + https://webrtc.googlesource.com/src/+/master/webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine
 + https://webrtc.googlesource.com/src/+/master/webrtc/examples/androidapp/
+
+## Debug native code in Android Studio
+
+Edit `gradle.properties`, set `compile_native_code=true` and other variables according to your WebRTC checkout location, then enjoy :)
