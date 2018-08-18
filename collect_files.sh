@@ -8,6 +8,7 @@ if [[ -z "${WEBRTC_ROOT// }" ]]; then
 fi
 
 # app
+cp ${WEBRTC_ROOT}/src/examples/androidapp/third_party/autobanh/lib/autobanh.jar ./app/libs/
 cp ${WEBRTC_ROOT}/src/examples/androidapp/AndroidManifest.xml ./app/src/main/AndroidManifest.xml
 rm -rf ./app/src/main/java/
 cp -rf ${WEBRTC_ROOT}/src/examples/androidapp/src/ ./app/src/main/java/
