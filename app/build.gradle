@@ -1,4 +1,10 @@
-apply plugin: 'com.android.application'
+def compileLibrary = "true" == rootProject.property("compile_library")
+
+if (compileLibrary) {
+    apply plugin: 'com.android.library'
+} else {
+    apply plugin: 'com.android.application'
+}
 
 android {
     compileSdkVersion rootProject.ext.androidCompileSdkVersion
@@ -9,7 +15,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode rootProject.ext.releaseVersionCode
         versionName rootProject.ext.releaseVersionName
-        applicationId "org.appspot.apprtc"
+        if (!compileLibrary) {
+            applicationId "org.appspot.apprtc"
+        }
         multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -35,6 +43,11 @@ dependencies {
 
     implementation (name:'autobanh', ext:'jar')
 
-    implementation project(':libjingle_peerconnection')
+    if (compileLibrary) {
+        api project(':libjingle_peerconnection')
+    } else {
+        implementation project(':libjingle_peerconnection')
+    }
+
     //implementation 'org.webrtc:google-webrtc:1.0.23995'
 }
