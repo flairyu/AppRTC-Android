@@ -111,7 +111,8 @@ public class ConnectActivity extends Activity {
       int runTimeMs = intent.getIntExtra(CallActivity.EXTRA_RUNTIME, 0);
       boolean useValuesFromIntent =
           intent.getBooleanExtra(CallActivity.EXTRA_USE_VALUES_FROM_INTENT, false);
-      String room = sharedPref.getString(keyprefRoom, "");
+      String room = intent.getStringExtra(CallActivity.EXTRA_ROOMID);
+      if (room == null) room = sharedPref.getString(keyprefRoom, "");
       connectToRoom(room, true, loopback, useValuesFromIntent, runTimeMs);
     }
   }
